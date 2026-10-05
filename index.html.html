@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calistenia Militar</title>
+<style>
+:root{--bg:#1c2018;--p:#272c21;--tx:#e9e6d6;--mu:#a2a58f;--ac:#d4a62a;--ok:#7fa05a;--bd:#3b4230;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#e8e5d3;--p:#f5f2e4;--tx:#262a1f;--mu:#666a56;--ac:#8f6a00;--ok:#4d6b2c;--bd:#c6c3ad}}
+:root[data-theme="dark"]{--bg:#1c2018;--p:#272c21;--tx:#e9e6d6;--mu:#a2a58f;--ac:#d4a62a;--ok:#7fa05a;--bd:#3b4230}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Barlow Condensed","Arial Narrow",Impact,sans-serif;font-size:18px}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:30px;margin:0;letter-spacing:1px;font-weight:700}
+h2{font-size:22px;margin:18px 0 8px}
+.hq{background:#4a7a1e;color:#fff;margin:-16px -16px 0;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:8px}.hq h1{font-size:26px}.hq .streak{background:#00000033;border-color:#fff;color:#fff;white-space:nowrap}.msg{background:var(--p);border-left:4px solid var(--ac);padding:10px 12px;margin-top:12px;font-style:italic}.btn.ok2{background:#4a7a1e;color:#fff;border-radius:14px}
+.streak{background:var(--p);border:2px solid var(--ac);padding:6px 12px;font-weight:700;color:var(--ac)}
+.rank{background:var(--p);border:1px solid var(--bd);padding:12px;margin-top:12px}
+.bar{height:10px;background:var(--bg);border:1px solid var(--bd);margin-top:8px}
+.bar i{display:block;height:100%;background:var(--ac)}
+.warn{background:var(--ac);color:#1c2018;padding:8px 12px;margin-top:12px;font-weight:700}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}
+.days button{padding:10px 0;font:inherit;background:var(--p);color:var(--tx);border:1px solid var(--bd);cursor:pointer}
+.days button.on{background:var(--ac);color:#1c2018;font-weight:700}
+.days button.today{outline:2px dashed var(--mu)}
+.card{background:var(--p);border:1px solid var(--bd);padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card small{color:var(--mu);display:block}
+a.v{color:var(--ac);text-decoration:underline;white-space:nowrap}
+.btn{display:block;width:100%;padding:16px;font:inherit;font-size:22px;font-weight:700;background:var(--ac);color:#1c2018;border:0;cursor:pointer;margin-top:14px}
+.btn.s{background:var(--p);color:var(--tx);border:1px solid var(--bd);font-size:18px;padding:10px}
+button:focus-visible,a:focus-visible{outline:3px solid var(--tx);outline-offset:2px}
+#run{text-align:center;padding-top:20px}
+#run .ph{color:var(--mu);font-size:20px}
+#run .nm{font-size:40px;font-weight:700;margin:10px 0}
+#run .big{font-size:96px;font-weight:700;color:var(--ac);line-height:1}
+.rest .big{color:var(--ok)}
+.note{color:var(--mu);font-size:16px;margin-top:10px}
+.fg{width:92px;height:55px;flex:none}.fig svg{width:min(100%,300px);height:auto}.fa,.fb{animation:fl 1.8s infinite}.fb{animation-direction:reverse}@keyframes fl{0%,45%{opacity:1}55%,100%{opacity:0}}@media(prefers-reduced-motion:reduce){.fa,.fb{animation:none}.fb{opacity:0}}
+</style></head><body><main>
+<div id="home">
+ <div class="hq"><h1>CUARTEL GENERAL DÍA <span id="dn">1</span></h1><div class="streak" id="streak">Racha 0</div></div>
+ <div id="warn"></div>
+ <div class="rank"><b id="rk"></b> <span id="lv" style="float:right"></span><div class="bar"><i id="xp"></i></div><div class="note" id="xpn"></div></div>
+ <div class="days" id="days"></div>
+ <h2 id="dt"></h2><div class="note" style="margin:-4px 0 8px">Circuito de alta intensidad: 15 minutos</div>
+ <div id="list"></div>
+ <div class="msg" id="msg"></div><button class="btn" id="go">INICIAR MISIÓN</button><button class="btn ok2" id="done"></button>
+ <p class="note">Calentamiento + circuito + estiramiento. Cada rango sube las repeticiones. Voz y vibración activas: no necesitas mirar el teléfono.</p>
+</div>
+<div id="run" hidden>
+ <div class="ph" id="ph"></div><div class="nm" id="nm"></div><div class="fig" id="fig"></div><div class="big" id="big"></div>
+ <div class="note" id="sub"></div>
+ <a class="v" id="vid" target="_blank" rel="noopener">Ver video de la técnica</a>
+ <button class="btn" id="ok">HECHO</button>
+ <button class="btn s" id="skip">Saltar</button>
+ <button class="btn s" id="quit">Abandonar</button>
+</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const DN=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+const RANKS=["Recluta","Soldado","Cabo","Sargento","Teniente","Capitán","Comandante"];
+const WARM=[["Saltos de tijera",30],["Círculos de brazos",20],["Rotación de cadera",20],["Sentadilla al aire",30]];
+const COOL=[["Estiramiento de pecho",25],["Cuádriceps de pie",25],["Isquiotibiales sentado",25],["Postura del niño",30]];
+const E={
+ flex:["Flexiones",10],dia:["Flexiones diamante",6],pica:["Flexiones en pica",6],
+ sent:["Sentadillas",15],zanc:["Zancadas",12],salt:["Sentadilla con salto",10],
+ dom:["Dominadas / remo invertido",5],fond:["Fondos en banco",10],
+ abs:["Elevación de piernas",12],plank:["Plancha (seg)",30],mont:["Escaladores",30],burp:["Burpees",8]};
+const DESC={flex:"Cuerpo recto de cabeza a talones. Baja el pecho hasta casi tocar el suelo y empuja con fuerza. Descanso 20s.",
+dia:"Manos juntas formando un diamante bajo el pecho. Codos pegados al cuerpo. Trabaja tríceps. Descanso 20s.",
+pica:"Cadera arriba en V invertida. Baja la cabeza entre las manos y empuja. Trabaja hombros. Descanso 20s.",
+sent:"Pies al ancho de hombros, espalda recta. Baja hasta que los muslos queden paralelos al suelo. Descanso 20s.",
+zanc:"Da un paso largo y baja la rodilla trasera cerca del suelo. Alterna piernas con control. Descanso 20s.",
+salt:"Baja en sentadilla y salta con explosividad. Aterriza suave, absorbiendo con las piernas. Descanso 20s.",
+dom:"Agarre firme en barra o mesa firme. Sube el pecho hacia las manos y baja controlado. Descanso 20s.",
+fond:"Manos en el borde de un banco, baja los codos a 90° y empuja. Espalda cerca del banco. Descanso 20s.",
+abs:"Acostado, piernas rectas. Súbelas a 90° sin despegar la espalda baja del suelo. Descanso 20s.",
+plank:"Antebrazos y puntas de pie en el suelo, cuerpo en línea recta. Aprieta abdomen y glúteos. Descanso 20s.",
+mont:"En posición de plancha alta, lleva las rodillas al pecho a ritmo rápido y controlado. Descanso 20s.",
+burp:"Sentadilla, plancha, flexión, salta y aplaude arriba. Movimiento completo y explosivo. Descanso 20s."};
+const PO={
+push:[{h:[82,24],c:["10,52 42,40 72,30 76,52"]},{h:[84,44],c:["10,52 42,49 72,46 76,52"]}],
+pica:[{h:[76,42],c:["28,52 48,16 70,34 78,52"]},{h:[74,48],c:["28,52 48,16 70,44 78,52"]}],
+squat:[{h:[50,8],c:["50,54 50,42 50,30 50,16 56,28"]},{h:[48,19],c:["58,54 62,42 40,40 46,26 68,28"]}],
+pull:[{h:[50,14],c:["50,54 50,38 50,22","42,10 50,22 58,10"],bar:10},{h:[50,4],c:["50,46 50,30 50,14","42,10 50,14 58,10"],bar:10}],
+dips:[{h:[34,14],c:["30,36 30,24 46,40 72,52"],bench:1},{h:[34,27],c:["30,36 30,34 46,50 72,52"],bench:1}],
+legs:[{h:[8,50],c:["15,50 40,50 80,50"]},{h:[8,50],c:["15,50 40,50 40,18"]}],
+plank:[{h:[80,36],c:["10,52 40,44 70,40 74,52"]},{h:[80,36],c:["10,52 40,44 70,40 74,52"]}],
+mont:[{h:[80,36],c:["10,52 40,44 70,40 74,52"]},{h:[80,36],c:["10,52 40,44 70,40 74,52","40,44 60,44 56,52"]}]};
+const MAP={flex:"push",dia:"push",pica:"pica",sent:"squat",zanc:"squat",salt:"squat",dom:"pull",fond:"dips",abs:"legs",plank:"plank",mont:"mont"};
+function fr(p,cl){const h=p.h;return `<g class="${cl}" fill="none" stroke="var(--tx)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">`+(p.bar?'<line x1="20" y1="'+p.bar+'" x2="80" y2="'+p.bar+'" stroke="var(--mu)"/>':'')+(p.bench?'<rect x="5" y="36" width="25" height="4" fill="var(--mu)" stroke="none"/>':'')+p.c.map(c=>'<polyline points="'+c+'"/>').join("")+`<circle cx="${h[0]}" cy="${h[1]}" r="5" fill="var(--p)"/><path d="M${h[0]-5.5} ${h[1]} A5.5 5.5 0 0 1 ${h[0]+5.5} ${h[1]}Z" fill="#4a7a1e" stroke="none"/></g>`}
+function svg(k,cl){let a,b;if(k=="burp"){a=PO.squat[0];b=PO.push[0]}else{[a,b]=PO[MAP[k]]}
+return `<svg class="${cl||"fg"}" viewBox="0 0 100 60" role="img" aria-label="${nm(k)}"><rect width="100" height="60" rx="4" fill="var(--bg)"/><line x1="0" y1="55" x2="100" y2="55" stroke="var(--bd)"/>${fr(a,"fa")}${fr(b,"fb")}</svg>`}
+const PLAN=[["Empuje: pecho y brazos",["flex","dia","fond","pica"]],["Piernas de acero",["sent","zanc","salt","plank"]],
+ ["Tracción y espalda",["dom","pica","abs","mont"]],["Core y resistencia",["plank","abs","mont","burp"]],
+ ["Cuerpo completo",["burp","flex","sent","dom"]],["Fuerza explosiva",["salt","dia","burp","zanc"]],["Día de campo",["burp","mont","flex","sent"]]];
+const MSGS=["La fatiga es mental. Cuando crees que no puedes más, todavía te queda el 40%.","La disciplina pesa gramos; el arrepentimiento pesa toneladas.","Más sudor en el entrenamiento, menos sangre en el combate.","Nadie viene a salvarte. Levántate y cumple la misión.","El dolor de hoy es la fuerza de mañana."];
+const VARS={flex:["Flexiones","Flexiones con pies elevados","Flexiones arquero","Flexiones con aplauso"],
+dia:["Flexiones diamante","Diamante con pies elevados","Diamante lentas (4 seg)","Diamante con aplauso"],
+pica:["Flexiones en pica","Pica con pies elevados","Pica profunda","Pica con pies en pared"],
+sent:["Sentadillas","Sentadilla búlgara","Pistol asistida","Sentadilla pistol"],
+zanc:["Zancadas","Zancadas caminando con pausa","Zancadas con salto","Zancada con salto y giro"],
+salt:["Sentadilla con salto","Salto en largo","Salto a escalón alto","Salto con rodillas al pecho"],
+dom:["Dominadas / remo invertido","Dominadas","Dominadas agarre ancho","Dominadas con pausa arriba"],
+fond:["Fondos en banco","Fondos con pies elevados","Fondos en paralelas","Fondos en paralelas lentos"],
+abs:["Elevación de piernas","Elevación con pausa arriba","Tijeras de piernas","Elevación lenta (4 seg)"],
+plank:["Plancha (seg)","Plancha con toque de hombro","Plancha lateral","Plancha con elevación de pierna"],
+mont:["Escaladores","Escaladores cruzados","Escaladores con pausa","Escaladores explosivos"],
+burp:["Burpees","Burpees tácticos","Burpees con salto","Burpees con flexión arquero"]};
+const TH=[0,300,800,1500,2500,4000,6000];
+const lvl=()=>{let l=0;TH.forEach((t,i)=>{if(S.xp>=t)l=i});return l};
+const tier=()=>Math.min(3,Math.floor(lvl()/2));
+const nm=k=>VARS[k][tier()];
+const dsc=k=>DESC[k]+(tier()?" Variante avanzada desbloqueada por tu rango.":"");
+let S={xp:0,streak:0,last:"",done:0};
+try{S=Object.assign(S,JSON.parse(localStorage.getItem("cm")||"{}"))}catch(e){}
+const save=()=>{try{localStorage.setItem("cm",JSON.stringify(S))}catch(e){}};
+const dstr=d=>d.toISOString().slice(0,10);
+const today=new Date(),ti=(today.getDay()+6)%7;let sel=ti;
+
+const sets=()=>3+(lvl()>=3?1:0);
+const mult=()=>1+lvl()*0.2;
+function reps(k){const b=E[k][1];return Math.round(b*mult()/(k=="plank"||k=="mont"?5:1))*(k=="plank"||k=="mont"?5:1)}
+function checkStreak(){
+ const y=new Date(today);y.setDate(y.getDate()-1);
+ if(S.last&&S.last!==dstr(today)&&S.last!==dstr(y)){S.streak=0;save()}
+}
+function render(){
+ checkStreak();
+ $("streak").textContent="Racha "+S.streak+(S.streak?" 🔥":"");
+ const L=lvl();$("rk").textContent=RANKS[L];$("lv").textContent="Nivel "+(L+1);
+ const into=S.xp-TH[L],span=L==6?1:TH[L+1]-TH[L];$("xp").style.width=(L==6?100:into/span*100)+"%";
+ $("xpn").textContent=L==6?"Rango máximo":(span-into)+" XP para "+RANKS[L+1];
+ $("warn").innerHTML=S.last!==dstr(today)?'<div class="warn">'+(S.streak?"Tu racha de "+S.streak+" días está en peligro. Entrena hoy.":"Hoy no has entrenado. Empieza tu racha.")+"</div>":"";
+ $("days").innerHTML=DN.map((d,i)=>`<button class="${i==sel?"on":""} ${i==ti?"today":""}" data-i="${i}">${d}</button>`).join("");
+ $("days").querySelectorAll("button").forEach(b=>b.onclick=()=>{sel=+b.dataset.i;render()});
+ const p=PLAN[sel];$("dt").textContent="MISIÓN DÍA "+(sel+1)+": "+p[0].toUpperCase();$("dn").textContent=sel+1;$("done").textContent="MISIÓN CUMPLIDA, "+RANKS[L].toUpperCase();$("msg").textContent='Mensaje del día: "'+MSGS[(sel+today.getDate())%MSGS.length]+'"';
+ $("list").innerHTML=p[1].map(k=>`<div class="card">${svg(k)}<div style="flex:1">${nm(k)}<small>${sets()} series × ${reps(k)}${k=="plank"||k=="mont"?" seg":""}</small><small>${dsc(k)}</small></div><a class="v" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(nm(k)+" técnica correcta short")}">Video</a></div>`).join("")
+ +`<div class="card"><div>Calentamiento y estiramiento<small>${WARM.length+COOL.length} movimientos guiados</small></div></div>`;
+}
+/* Sesión */
+let Q=[],qi=0,tm=null,t=0;
+function say(s){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang="es-MX";speechSynthesis.speak(u)}catch(e){}}
+function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function build(){
+ const p=PLAN[sel][1];Q=[];
+ WARM.forEach(w=>Q.push({ph:"Calentamiento",n:w[0],t:w[1],auto:1,v:w[0]}));
+ p.forEach(k=>{for(let s=1;s<=sets();s++){
+  const r=reps(k),tmd=k=="plank"||k=="mont";
+  Q.push({ph:"Serie "+s+" de "+sets(),n:nm(k),r:r,t:tmd?r:0,auto:tmd,k:k,d:dsc(k),v:nm(k),unit:tmd?"seg":"reps"});
+  Q.push({ph:"Descanso",n:"Restablece posición",t:s==sets()?30:20,auto:1,rest:1,next:s==sets()?"":nm(k)})}});
+ COOL.forEach(w=>Q.push({ph:"Estiramiento",n:w[0],t:w[1],auto:1,v:w[0]}));
+}
+function show(){
+ clearInterval(tm);
+ if(qi>=Q.length)return finish();
+ const q=Q[qi];$("run").className=q.rest?"rest":"";
+ $("ph").textContent=q.ph;$("fig").innerHTML=q.k?svg(q.k,"fgb"):"";$("nm").textContent=q.n;
+ $("vid").hidden=!q.v;
+ if(q.v)$("vid").href="https://www.youtube.com/results?search_query="+encodeURIComponent(q.v+" técnica correcta short");
+ $("sub").textContent=q.rest?(q.next?"Siguiente: "+q.next:"Siguiente bloque"):(q.d||"")+(q.r&&!q.t?" Toca HECHO al terminar.":"");
+ if(q.r&&!q.t){$("big").textContent=q.r+" reps";$("ok").hidden=false;say(q.n+", "+q.r+" repeticiones");return}
+ $("ok").hidden=true;t=q.t;$("big").textContent=t;
+ say(q.rest?"Descanso. Vuelve a posición inicial en "+t+" segundos":q.n);
+ tm=setInterval(()=>{t--;$("big").textContent=t;
+  if(t<=3&&t>0){vib(80)}
+  if(t<=0){clearInterval(tm);
+   if(q.rest){say("Posición inicial. Ya.");vib([300,100,300])}else vib(200);
+   qi++;show()}},1000);
+}
+function finish(){
+ clearInterval(tm);
+ const L0=lvl();const gain=S.last!==dstr(today)?60+sets()*10:0;S.xp+=gain;const L1=lvl();
+ if(S.last!==dstr(today)){S.streak++;S.last=dstr(today)}
+ S.done++;save();say("Misión cumplida");vib([200,100,200,100,400]);
+ sel=(sel+1)%7;$("run").hidden=true;$("home").hidden=false;render();
+ $("warn").innerHTML='<div class="warn">Misión cumplida: +'+gain+' XP'+(gain?'':' (hoy ya sumaste XP)')+(L1>L0?'. ¡Ascendiste a '+RANKS[L1]+'! Nuevos ejercicios desbloqueados':'')+'. Descansa: mañana toca el Día '+(sel+1)+'.</div>';
+}
+$("done").onclick=()=>{clearInterval(tm);finish()};
+$("go").onclick=()=>{build();qi=0;$("home").hidden=true;$("run").hidden=false;show()};
+$("ok").onclick=()=>{vib(60);qi++;show()};
+$("skip").onclick=()=>{qi++;show()};
+$("quit").onclick=()=>{clearInterval(tm);try{speechSynthesis.cancel()}catch(e){}$("run").hidden=true;$("home").hidden=false;render()};
+render();
+</script></body></html>
