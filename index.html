@@ -29,6 +29,10 @@ h2{font-size:22px;margin:18px 0 8px}
 .days button.on{background:var(--ac);color:#1c2018;font-weight:700}
 .days button.today{outline:2px dashed var(--mu)}
 .exp{display:flex;gap:6px;margin-top:12px}.exp button{flex:1;padding:10px 4px;font:inherit;font-size:17px;background:var(--p);color:var(--tx);border:1px solid var(--bd);cursor:pointer}.exp button.on{background:var(--ac);color:#1c2018;font-weight:700}
+.tabs{display:flex;gap:6px;margin-top:12px}.tabs button{flex:1;padding:12px 4px;font:inherit;font-size:19px;font-weight:700;background:var(--p);color:var(--tx);border:2px solid var(--bd);cursor:pointer}.tabs button.on{background:var(--ac);color:#1c2018;border-color:var(--ac)}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}.cgrid div{padding:8px 0;text-align:center;background:var(--p);border:1px solid var(--bd);color:var(--mu);font-size:16px}.cgrid .ok{background:#4a7a1e;color:#fff;border-color:#4a7a1e}.cgrid .cur{background:var(--ac);color:#1c2018;font-weight:700;border-color:var(--ac)}.cgrid .rs{font-style:italic}
+[hidden]{display:none!important}
+.btn:disabled{opacity:.55;cursor:default}a.btn{text-align:center;text-decoration:none}
 .card{background:var(--p);border:1px solid var(--bd);padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .card small{color:var(--mu);display:block}
 a.v{color:var(--ac);text-decoration:underline;white-space:nowrap}
@@ -45,6 +49,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tx);outline-offset:
 </style></head><body><main>
 <div id="home">
 <div class="hq"><h1>CUARTEL GENERAL DÍA <span id="dn">1</span></h1><div class="streak" id="streak">Racha 0</div></div>
+<div class="tabs" id="tabs1"></div>
 <div id="warn"></div>
 <div class="rank"><b id="rk"></b> <span id="lv" style="float:right"></span><div class="bar"><i id="xp"></i></div><div class="note" id="xpn"></div></div>
 <div class="exp" id="exp"></div>
@@ -53,6 +58,21 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tx);outline-offset:
 <div id="list"></div>
 <div class="msg" id="msg"></div><button class="btn" id="go">INICIAR MISIÓN</button>
 <p class="note">Calentamiento + circuito + estiramiento. Cada rango sube las repeticiones. Voz y vibración activas: no necesitas mirar el teléfono.</p><p class="note">Consulta a tu médico antes de entrenar. Detente si sientes dolor o mareo.</p>
+</div>
+<div id="ch" hidden>
+<div class="hq"><h1>RETO 28 DÍAS</h1><div class="streak" id="streak2"></div></div>
+<div class="tabs" id="tabs2"></div>
+<div id="chmsg"></div>
+<div class="rank"><b id="chd"></b><div class="bar"><i id="chx"></i></div><div class="note" id="chn"></div></div>
+<div class="exp" id="exp2"></div>
+<div class="cgrid" id="cgrid"></div>
+<h2 id="cht"></h2><div class="note" id="chw" style="margin:-4px 0 8px"></div>
+<div id="chl"></div>
+<button class="btn" id="chgo"></button>
+<a class="btn ok2" id="wa" target="_blank" rel="noopener" hidden></a>
+<button class="btn s" id="chreset">Reiniciar reto</button>
+<p class="note">Un día del reto por día de calendario. Cada semana sube un poco la dificultad. Los días de descanso activo también cuentan: el cuerpo se fortalece mientras descansa.</p>
+<p class="note">Consulta a tu médico antes de entrenar. Detente si sientes dolor o mareo.</p>
 </div>
 <div id="hl" hidden><h2>Antes de empezar</h2><p>Esta app ofrece rutinas generales de ejercicio y no sustituye la opinión de un médico. Consulta a tu médico antes de empezar si tienes alguna lesión o condición de salud, o si llevas tiempo sin hacer ejercicio. Detente si sientes dolor, mareo o falta de aire. Los ejercicios con salto y los burpees exigen más a rodillas y espalda.</p><button class="btn" id="hok">ENTIENDO, COMENZAR</button><button class="btn s" id="hno">Volver</button></div>
 <div id="run" hidden>
@@ -74,7 +94,8 @@ const E={
 flex:["Flexiones",10],dia:["Flexiones diamante",6],pica:["Flexiones en pica",6],
 sent:["Sentadillas",15],zanc:["Zancadas",12],salt:["Sentadilla con salto",10],
 dom:["Dominadas / remo invertido",5],fond:["Fondos en banco",10],
-abs:["Elevación de piernas",12],plank:["Plancha (seg)",30],mont:["Escaladores",30],burp:["Burpees",8]};
+abs:["Elevación de piernas",12],plank:["Plancha (seg)",30],mont:["Escaladores",30],burp:["Burpees",8],
+inc:["Flexiones inclinadas",12],punt:["Puente de glúteos",15],supm:["Superman",12],sis:["Sentadilla isométrica",30],rem:["Remo invertido",8],hol:["Hollow hold",20],osoc:["Caminata del oso",30],zanl:["Zancada lateral",10],step:["Subida a escalón",12],cue:["Cuerda imaginaria",30],bic:["Bicicleta abdominal",20]};
 const DESC={flex:"Cuerpo recto de cabeza a talones. Baja el pecho hasta casi tocar el suelo y empuja con fuerza. Descanso 20s.",
 dia:"Manos juntas formando un diamante bajo el pecho. Codos pegados al cuerpo. Trabaja tríceps. Descanso 20s.",
 pica:"Cadera arriba en V invertida. Baja la cabeza entre las manos y empuja. Trabaja hombros. Descanso 20s.",
@@ -86,7 +107,18 @@ fond:"Manos en el borde de un banco, baja los codos a 90° y empuja. Espalda cer
 abs:"Acostado, piernas rectas. Súbelas a 90° sin despegar la espalda baja del suelo. Descanso 20s.",
 plank:"Antebrazos y puntas de pie en el suelo, cuerpo en línea recta. Aprieta abdomen y glúteos. Descanso 20s.",
 mont:"En posición de plancha alta, lleva las rodillas al pecho a ritmo rápido y controlado. Descanso 20s.",
-burp:"Sentadilla, plancha, flexión, salta y aplaude arriba. Movimiento completo y explosivo. Descanso 20s."};
+burp:"Sentadilla, plancha, flexión, salta y aplaude arriba. Movimiento completo y explosivo. Descanso 20s.",
+inc:"Manos en una superficie firme y alta (mesa, banco), cuerpo recto. Baja el pecho al borde y empuja. Ideal para aprender la técnica. Descanso 20s.",
+punt:"Acostado boca arriba, rodillas dobladas. Sube la cadera apretando los glúteos hasta formar una línea recta y baja con control. Descanso 20s.",
+supm:"Acostado boca abajo, brazos al frente. Levanta pecho, brazos y piernas a la vez, sostén un segundo y baja. Fortalece la espalda. Descanso 20s.",
+sis:"Espalda apoyada en la pared, muslos paralelos al suelo. Sostén la posición sin moverte, respirando. Descanso 20s.",
+rem:"Bajo una mesa firme, agarra el borde y mantén el cuerpo recto. Jala el pecho hacia el borde y baja controlado. Descanso 20s.",
+hol:"Acostado, lumbar pegada al suelo, brazos y piernas extendidos y levantados. Sostén la posición apretando el abdomen. Descanso 20s.",
+osoc:"En cuatro apoyos con las rodillas apenas despegadas del suelo, avanza y retrocede con pasos cortos y la espalda plana. Descanso 20s.",
+zanl:"Da un paso amplio hacia un lado, flexiona esa rodilla y mantén la otra pierna recta. Empuja para volver al centro. Descanso 20s.",
+step:"Frente a un escalón firme, sube con una pierna llevando la otra rodilla arriba y baja con control. Alterna las piernas. Descanso 20s.",
+cue:"De pie sobre la punta de los pies, simula saltar la cuerda con saltos pequeños y rápidos. Aterriza suave. Descanso 20s.",
+bic:"Acostado, manos tras la cabeza. Lleva el codo hacia la rodilla contraria mientras estiras la otra pierna, alternando. Descanso 20s."};
 const PO={
 push:[{h:[82,24],c:["10,52 42,40 72,30 76,52"]},{h:[84,44],c:["10,52 42,49 72,46 76,52"]}],
 pica:[{h:[76,42],c:["28,52 48,16 70,34 78,52"]},{h:[74,48],c:["28,52 48,16 70,44 78,52"]}],
@@ -95,8 +127,10 @@ pull:[{h:[50,14],c:["50,54 50,38 50,22","42,10 50,22 58,10"],bar:10},{h:[50,4],c
 dips:[{h:[34,14],c:["30,36 30,24 46,40 72,52"],bench:1},{h:[34,27],c:["30,36 30,34 46,50 72,52"],bench:1}],
 legs:[{h:[8,50],c:["15,50 40,50 80,50"]},{h:[8,50],c:["15,50 40,50 40,18"]}],
 plank:[{h:[80,36],c:["10,52 40,44 70,40 74,52"]},{h:[80,36],c:["10,52 40,44 70,40 74,52"]}],
-mont:[{h:[80,36],c:["10,52 40,44 70,40 74,52"]},{h:[80,36],c:["10,52 40,44 70,40 74,52","40,44 60,44 56,52"]}]};
-const MAP={flex:"push",dia:"push",pica:"pica",sent:"squat",zanc:"squat",salt:"squat",dom:"pull",fond:"dips",abs:"legs",plank:"plank",mont:"mont"};
+mont:[{h:[80,36],c:["10,52 40,44 70,40 74,52"]},{h:[80,36],c:["10,52 40,44 70,40 74,52","40,44 60,44 56,52"]}],
+bridge:[{h:[8,50],c:["14,52 48,52 64,38 76,52"]},{h:[8,50],c:["14,52 48,38 64,38 76,52"]}],
+supm:[{h:[12,46],c:["18,50 50,50 84,50"]},{h:[12,40],c:["6,36 18,46 50,50 70,48 88,38"]}]};
+const MAP={inc:"push",punt:"bridge",supm:"supm",sis:"squat",rem:"pull",hol:"legs",osoc:"mont",zanl:"squat",step:"squat",cue:"squat",bic:"legs",flex:"push",dia:"push",pica:"pica",sent:"squat",zanc:"squat",salt:"squat",dom:"pull",fond:"dips",abs:"legs",plank:"plank",mont:"mont"};
 function fr(p,cl){const h=p.h;return `<g class="${cl}" fill="none" stroke="var(--tx)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">`+(p.bar?'<line x1="20" y1="'+p.bar+'" x2="80" y2="'+p.bar+'" stroke="var(--mu)"/>':'')+(p.bench?'<rect x="5" y="36" width="25" height="4" fill="var(--mu)" stroke="none"/>':'')+p.c.map(c=>'<polyline points="'+c+'"/>').join("")+`<circle cx="${h[0]}" cy="${h[1]}" r="5" fill="var(--p)"/><path d="M${h[0]-5.5} ${h[1]} A5.5 5.5 0 0 1 ${h[0]+5.5} ${h[1]}Z" fill="#4a7a1e" stroke="none"/></g>`}
 function svg(k,cl){let a,b;if(k=="burp"){a=PO.squat[0];b=PO.push[0]}else{[a,b]=PO[MAP[k]]}
 return `<svg class="${cl||"fg"}" viewBox="0 0 100 60" role="img" aria-label="${nm(k)}"><rect width="100" height="60" rx="4" fill="var(--bg)"/><line x1="0" y1="55" x2="100" y2="55" stroke="var(--bd)"/>${fr(a,"fa")}${fr(b,"fb")}</svg>`}
@@ -115,28 +149,42 @@ fond:["Fondos en banco","Fondos con pies elevados","Fondos en paralelas","Fondos
 abs:["Elevación de piernas","Elevación con pausa arriba","Tijeras de piernas","Elevación lenta (4 seg)"],
 plank:["Plancha (seg)","Plancha con toque de hombro","Plancha lateral","Plancha con elevación de pierna"],
 mont:["Escaladores","Escaladores cruzados","Escaladores con pausa","Escaladores explosivos"],
-burp:["Burpees","Burpees tácticos","Burpees con salto","Burpees con flexión arquero"]};
+burp:["Burpees","Burpees tácticos","Burpees con salto","Burpees con flexión arquero"],
+inc:["Flexiones inclinadas","Flexiones lentas (3 seg)","Flexiones con pausa abajo","Flexiones con pies elevados y pausa"],
+punt:["Puente de glúteos","Puente con pausa arriba","Puente a una pierna","Puente a una pierna con pausa"],
+supm:["Superman","Superman con pausa","Superman alterno","Superman con remo de brazos"],
+sis:["Sentadilla isométrica","Sentadilla isométrica profunda","Sentadilla isométrica con brazos arriba","Sentadilla isométrica a una pierna asistida"],
+rem:["Remo invertido en mesa","Remo invertido con pies elevados","Remo invertido lento (3 seg)","Remo invertido a un brazo asistido"],
+hol:["Hollow con rodillas","Hollow hold","Hollow rock","Hollow hold con brazos extendidos"],
+osoc:["Caminata del oso en el lugar","Caminata del oso","Caminata del oso con toque de hombro","Caminata del oso lateral"],
+zanl:["Zancada lateral","Zancada lateral con pausa","Zancada lateral profunda","Zancada lateral con salto"],
+step:["Subida a escalón","Subida a escalón con rodilla arriba","Subida a escalón con salto","Subida a escalón rápida con salto"],
+cue:["Cuerda imaginaria suave","Cuerda imaginaria","Cuerda imaginaria rápida","Cuerda imaginaria doble"],
+bic:["Bicicleta abdominal","Bicicleta abdominal lenta","Bicicleta con pausa","Bicicleta con piernas extendidas"]};
+const TIMED=["plank","mont","sis","hol","osoc","cue"];const isT=k=>TIMED.includes(k);
 const TH=[0,300,800,1500,2500,4000,6000];
 const lvl=()=>{let l=0;TH.forEach((t,i)=>{if(S.xp>=t)l=i});return l};
-const dl=()=>Math.min(6,lvl()+({p:0,i:2,a:4}[S.exp]||0));
+let mode="w";
+const dl=()=>Math.min(6,lvl()+({p:0,i:2,a:4}[S.exp]||0)+(mode=="c"?Math.min(4,Math.floor((S.ch.d-1)/7)+1)-1:0));
 const tier=()=>Math.min(3,Math.floor(dl()/2));
 const nm=k=>VARS[k][tier()];
 const dsc=k=>DESC[k]+(tier()?" Variante avanzada.":"");
-let S={xp:0,streak:0,last:"",done:0,exp:"p"};
+let S={xp:0,streak:0,last:"",done:0,exp:"p",ch:{d:1,last:""}};
 try{S=Object.assign(S,JSON.parse(localStorage.getItem("cm")||"{}"))}catch(e){}
+if(!S.ch||!(S.ch.d>=1)){S.ch={d:1,last:""}}
 const save=()=>{try{localStorage.setItem("cm",JSON.stringify(S))}catch(e){}};
 /* Fecha en hora LOCAL (antes usaba UTC y fallaba por las noches) */
 const dstr=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const today=new Date(),ti=(today.getDay()+6)%7;let sel=ti;
 const sets=()=>3+(dl()>=3?1:0);
 const mult=()=>1+dl()*0.2;
-function reps(k){const b=E[k][1];return Math.round(b*mult()/(k=="plank"||k=="mont"?5:1))*(k=="plank"||k=="mont"?5:1)}
+function reps(k){const b=E[k][1];return Math.round(b*mult()/(isT(k)?5:1))*(isT(k)?5:1)}
 function checkStreak(){
 const y=new Date(today);y.setDate(y.getDate()-1);
 if(S.last&&S.last!==dstr(today)&&S.last!==dstr(y)){S.streak=0;save()}
 }
 function render(){
-checkStreak();
+checkStreak();tabs("tabs1");
 $("exp").innerHTML=[["p","Principiante"],["i","Intermedio"],["a","Avanzado"]].map(e=>`<button class="${S.exp==e[0]?"on":""}" data-e="${e[0]}">${e[1]}</button>`).join("");$("exp").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.exp=b.dataset.e;save();render()});
 $("streak").textContent="Racha "+S.streak+(S.streak?" 🔥":"");
 const L=lvl();$("rk").textContent=RANKS[L];$("lv").textContent="Nivel "+(L+1);
@@ -146,9 +194,74 @@ $("warn").innerHTML=S.last!==dstr(today)?'<div class="warn">'+(S.streak?"Tu rach
 $("days").innerHTML=DN.map((d,i)=>`<button class="${i==sel?"on":""} ${i==ti?"today":""}" data-i="${i}">${d}</button>`).join("");
 $("days").querySelectorAll("button").forEach(b=>b.onclick=()=>{sel=+b.dataset.i;render()});
 const p=PLAN[sel];$("dt").textContent="MISIÓN DÍA "+(sel+1)+": "+p[0].toUpperCase();$("dn").textContent=sel+1;$("msg").textContent='Mensaje del día: "'+MSGS[(sel+today.getDate())%MSGS.length]+'"';
-$("list").innerHTML=p[1].map(k=>`<div class="card">${svg(k)}<div style="flex:1">${nm(k)}<small>${sets()} series × ${reps(k)}${k=="plank"||k=="mont"?" seg":""}</small><small>${dsc(k)}</small></div><a class="v" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(nm(k)+" técnica correcta short")}">Video</a></div>`).join("")
+$("list").innerHTML=p[1].map(k=>`<div class="card">${svg(k)}<div style="flex:1">${nm(k)}<small>${sets()} series × ${reps(k)}${isT(k)?" seg":""}</small><small>${dsc(k)}</small></div><a class="v" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(nm(k)+" técnica correcta short")}">Video</a></div>`).join("")
 +`<div class="card"><div>Calentamiento y estiramiento<small>${WARM.length+COOL.length} movimientos guiados</small></div></div>`;
 }
+/* ===== Reto de 28 días ===== */
+const WA="5216146072488";
+const WK=["Semana 1: Base","Semana 2: Fuerza","Semana 3: Potencia","Semana 4: Prueba final"];
+const MOV=[["Estiramiento de pecho",30],["Cuádriceps de pie",30],["Isquiotibiales sentado",30],["Postura del niño",40],["Rotación de columna acostado",30],["Círculos de cadera",30],["Estiramiento de hombros",30],["Respiración profunda",40]];
+const CH=[
+["Arranque: empuje y piernas",["inc","sent","plank","punt"]],
+["Tracción y core",["rem","supm","bic","step"]],
+["Piernas y cardio",["zanc","cue","abs","sis"]],
+["Empuje y hombros",["flex","pica","fond","hol"]],
+["Cuerpo completo ligero",["sent","rem","mont","inc"]],
+["Resistencia",["burp","zanl","plank","supm"]],
+["Descanso activo: movilidad",null],
+["Empuje fuerte",["dia","flex","fond","abs"]],
+["Piernas fuertes",["zanc","step","sis","punt"]],
+["Espalda y core",["dom","rem","hol","bic"]],
+["Cardio militar",["burp","cue","osoc","salt"]],
+["Pecho y tríceps",["inc","dia","fond","mont"]],
+["Cuerpo completo",["sent","dom","pica","plank"]],
+["Descanso activo: movilidad",null],
+["Explosivo",["salt","flex","zanl","hol"]],
+["Tracción pesada",["dom","supm","abs","osoc"]],
+["Piernas y glúteos",["step","punt","zanc","cue"]],
+["Empuje avanzado",["pica","dia","inc","plank"]],
+["Core de acero",["hol","bic","abs","mont"]],
+["Circuito militar",["burp","rem","sent","fond"]],
+["Descanso activo: movilidad",null],
+["Empuje total",["flex","dia","pica","sis"]],
+["Piernas totales",["zanl","salt","step","punt"]],
+["Tracción total",["dom","rem","supm","hol"]],
+["Cardio y core",["cue","osoc","abs","plank"]],
+["Cuerpo completo duro",["burp","inc","zanc","mont"]],
+["Simulacro final",["sent","flex","dom","abs"]],
+["PRUEBA FINAL",["burp","dia","zanc","plank"]]];
+const wk=d=>Math.min(4,Math.floor((d-1)/7)+1);
+function tabs(id){const a=id=="tabs1"?"w":"c";
+$(id).innerHTML=[["w","Rutina semanal"],["c","Reto 28 días"]].map(e=>`<button class="${a==e[0]?"on":""}" data-t="${e[0]}">${e[1]}</button>`).join("");
+$(id).querySelectorAll("button").forEach(b=>b.onclick=()=>{if(b.dataset.t=="w")showHome();else showCh()})}
+function showHome(){mode="w";$("ch").hidden=true;$("home").hidden=false;render()}
+function showCh(){mode="c";$("home").hidden=true;$("ch").hidden=false;renderCh()}
+function renderCh(){
+checkStreak();tabs("tabs2");
+const c=S.ch,d=c.d,fin=d>28;
+$("streak2").textContent="Racha "+S.streak+(S.streak?" 🔥":"");
+$("exp2").innerHTML=[["p","Principiante"],["i","Intermedio"],["a","Avanzado"]].map(e=>`<button class="${S.exp==e[0]?"on":""}" data-e="${e[0]}">${e[1]}</button>`).join("");
+$("exp2").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.exp=b.dataset.e;save();renderCh()});
+$("chd").textContent=fin?"Reto completado":"Día "+d+" de 28";
+$("chx").style.width=Math.min(100,(d-1)/28*100)+"%";
+$("chn").textContent=fin?"Completaste los 28 días. ¡Felicidades!":"Te faltan "+(29-d)+" días";
+$("cgrid").innerHTML=CH.map((x,i)=>{const n=i+1;return `<div class="${n<d?"ok":n==d?"cur":""}${x[1]?"":" rs"}" title="Día ${n}${x[1]?"":" (descanso activo)"}">${n<d?"✓":n}</div>`}).join("");
+if(fin){$("cht").textContent="RETO COMPLETADO";$("chw").textContent="Puedes reiniciarlo cuando quieras.";$("chl").innerHTML="";$("chgo").hidden=true}
+else{const day=CH[d-1];
+$("cht").textContent="DÍA "+d+": "+day[0].toUpperCase();
+$("chw").textContent=WK[wk(d)-1]+(day[1]?" · 4 ejercicios":" · unos 10 minutos");
+$("chl").innerHTML=day[1]?day[1].map(k=>`<div class="card">${svg(k)}<div style="flex:1">${nm(k)}<small>${sets()} series × ${reps(k)}${isT(k)?" seg":""}</small><small>${dsc(k)}</small></div><a class="v" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(nm(k)+" técnica correcta short")}">Video</a></div>`).join("")+`<div class="card"><div>Calentamiento y estiramiento<small>${WARM.length+COOL.length} movimientos guiados</small></div></div>`
+:`<div class="card"><div>Calentamiento y movilidad<small>${WARM.length+MOV.length} movimientos guiados, sin series</small></div></div>`;
+$("chgo").hidden=false;
+const hoy=c.last===dstr(today);
+$("chgo").disabled=hoy;
+$("chgo").textContent=hoy?"HOY YA CUMPLISTE EL DÍA "+(d-1)+". VUELVE MAÑANA":"COMENZAR DÍA "+d}
+const msg=fin?"Hola, completé el Reto 28 días de Calistenia Militar 💪":"Hola, ya voy por el día "+d+" del Reto 28 días de Calistenia Militar";
+$("wa").hidden=!(d>=25);
+$("wa").href="https://wa.me/"+WA+"?text="+encodeURIComponent(msg);
+$("wa").textContent=fin?"AVISAR QUE TERMINÉ EL RETO":"AVISAR MI AVANCE POR WHATSAPP";
+}
+$("chreset").onclick=()=>{if(confirm("¿Reiniciar el reto desde el día 1?")){S.ch={d:1,last:""};save();$("chmsg").innerHTML="";renderCh()}};
 /* Pantalla encendida durante la sesión */
 let WL=null;
 async function wake(){try{if(navigator.wakeLock)WL=await navigator.wakeLock.request("screen")}catch(e){}}
@@ -159,10 +272,11 @@ let Q=[],qi=0,tm=null,t=0,skipped=0;
 function say(s){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang="es-MX";speechSynthesis.speak(u)}catch(e){}}
 function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
 function build(){
-const p=PLAN[sel][1];Q=[];
+Q=[];let p;
+if(mode=="c"){const day=CH[Math.min(S.ch.d,28)-1];if(!day[1]){WARM.forEach(w=>Q.push({ph:"Calentamiento",n:w[0],t:w[1],auto:1,v:w[0]}));MOV.forEach(w=>Q.push({ph:"Movilidad",n:w[0],t:w[1],auto:1,v:w[0]}));return}p=day[1]}else p=PLAN[sel][1];
 WARM.forEach(w=>Q.push({ph:"Calentamiento",n:w[0],t:w[1],auto:1,v:w[0]}));
 p.forEach(k=>{for(let s=1;s<=sets();s++){
-const r=reps(k),tmd=k=="plank"||k=="mont";
+const r=reps(k),tmd=isT(k);
 Q.push({ph:"Serie "+s+" de "+sets(),n:nm(k),r:r,t:tmd?r:0,auto:tmd,k:k,d:dsc(k),v:nm(k),unit:tmd?"seg":"reps"});
 Q.push({ph:"Descanso",n:"Restablece posición",t:s==sets()?30:20,auto:1,rest:1,next:s==sets()?"":nm(k)})}});
 COOL.forEach(w=>Q.push({ph:"Estiramiento",n:w[0],t:w[1],auto:1,v:w[0]}));
@@ -189,16 +303,21 @@ clearInterval(tm);unwake();
 const L0=lvl();const full=skipped<=Math.floor(Q.length*0.25);const gain=(full&&S.last!==dstr(today))?60+sets()*10:0;S.xp+=gain;const L1=lvl();
 if(full&&S.last!==dstr(today)){S.streak++;S.last=dstr(today)}
 S.done++;save();say("Misión cumplida");vib([200,100,200,100,400]);
+if(mode=="c"){const dn=S.ch.d;if(full){S.ch.d++;S.ch.last=dstr(today)}save();$("run").hidden=true;showCh();
+const xt=gain?" +"+gain+" XP":(full?" (hoy ya sumaste XP)":"");
+$("chmsg").innerHTML='<div class="warn">'+(full?(dn>=28?"¡Reto de 28 días completado!":"Día "+dn+" completado.")+xt+(L1>L0?" ¡Ascendiste a "+RANKS[L1]+"!":"")+(dn<28?" Mañana toca el día "+(dn+1)+".":""):"Saltaste demasiados pasos: el día "+dn+" no cuenta. Inténtalo de nuevo mañana.")+"</div>";return}
 sel=(sel+1)%7;$("run").hidden=true;$("home").hidden=false;render();
 $("warn").innerHTML='<div class="warn">Misión cumplida: +'+gain+' XP'+(gain?'':(full?' (hoy ya sumaste XP)':' (saltaste demasiados pasos: no cuenta como misión completa)'))+(L1>L0?'. ¡Ascendiste a '+RANKS[L1]+'! Nuevos ejercicios desbloqueados':'')+'. Descansa: mañana toca el Día '+(sel+1)+'.</div>';
 }
-function start(){build();qi=0;skipped=0;$("hl").hidden=true;$("home").hidden=true;$("run").hidden=false;wake();show()}
-$("go").onclick=()=>{if(S.health){start()}else{$("home").hidden=true;$("hl").hidden=false}};
+function start(){build();qi=0;skipped=0;$("hl").hidden=true;$("home").hidden=true;$("ch").hidden=true;$("run").hidden=false;wake();show()}
+$("go").onclick=()=>{mode="w";gate()};
+$("chgo").onclick=()=>{mode="c";gate()};
+function gate(){if(S.health){start()}else{$("home").hidden=true;$("ch").hidden=true;$("hl").hidden=false}}
 $("hok").onclick=()=>{S.health=1;save();start()};
-$("hno").onclick=()=>{$("hl").hidden=true;$("home").hidden=false};
+$("hno").onclick=()=>{$("hl").hidden=true;if(mode=="c")showCh();else showHome()};
 $("ok").onclick=()=>{vib(60);qi++;show()};
 $("skip").onclick=()=>{skipped++;qi++;show()};
-$("quit").onclick=()=>{clearInterval(tm);unwake();try{speechSynthesis.cancel()}catch(e){}$("run").hidden=true;$("home").hidden=false;render()};
+$("quit").onclick=()=>{clearInterval(tm);unwake();try{speechSynthesis.cancel()}catch(e){}$("run").hidden=true;if(mode=="c")showCh();else showHome()};
 render();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
 </script></body></html>
