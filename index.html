@@ -44,9 +44,10 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tx);outline-offset:
 <div class="days" id="days"></div>
 <h2 id="dt"></h2><div class="note" style="margin:-4px 0 8px">Circuito de alta intensidad: 15 minutos</div>
 <div id="list"></div>
-<div class="msg" id="msg"></div><button class="btn" id="go">INICIAR MISIÓN</button><button class="btn ok2" id="done"></button>
-<p class="note">Calentamiento + circuito + estiramiento. Cada rango sube las repeticiones. Voz y vibración activas: no necesitas mirar el teléfono.</p>
+<div class="msg" id="msg"></div><button class="btn" id="go">INICIAR MISIÓN</button>
+<p class="note">Calentamiento + circuito + estiramiento. Cada rango sube las repeticiones. Voz y vibración activas: no necesitas mirar el teléfono.</p><p class="note">Consulta a tu médico antes de entrenar. Detente si sientes dolor o mareo.</p>
 </div>
+<div id="hl" hidden><h2>Antes de empezar</h2><p>Esta app ofrece rutinas generales de ejercicio y no sustituye la opinión de un médico. Consulta a tu médico antes de empezar si tienes alguna lesión o condición de salud, o si llevas tiempo sin hacer ejercicio. Detente si sientes dolor, mareo o falta de aire. Los ejercicios con salto y los burpees exigen más a rodillas y espalda.</p><button class="btn" id="hok">ENTIENDO, COMENZAR</button><button class="btn s" id="hno">Volver</button></div>
 <div id="run" hidden>
 <div class="ph" id="ph"></div><div class="nm" id="nm"></div><div class="fig" id="fig"></div><div class="big" id="big"></div>
 <div class="note" id="sub"></div>
@@ -137,7 +138,7 @@ $("xpn").textContent=L==6?"Rango máximo":(span-into)+" XP para "+RANKS[L+1];
 $("warn").innerHTML=S.last!==dstr(today)?'<div class="warn">'+(S.streak?"Tu racha de "+S.streak+" días está en peligro. Entrena hoy.":"Hoy no has entrenado. Empieza tu racha.")+"</div>":"";
 $("days").innerHTML=DN.map((d,i)=>`<button class="${i==sel?"on":""} ${i==ti?"today":""}" data-i="${i}">${d}</button>`).join("");
 $("days").querySelectorAll("button").forEach(b=>b.onclick=()=>{sel=+b.dataset.i;render()});
-const p=PLAN[sel];$("dt").textContent="MISIÓN DÍA "+(sel+1)+": "+p[0].toUpperCase();$("dn").textContent=sel+1;$("done").textContent="MISIÓN CUMPLIDA, "+RANKS[L].toUpperCase();$("msg").textContent='Mensaje del día: "'+MSGS[(sel+today.getDate())%MSGS.length]+'"';
+const p=PLAN[sel];$("dt").textContent="MISIÓN DÍA "+(sel+1)+": "+p[0].toUpperCase();$("dn").textContent=sel+1;$("msg").textContent='Mensaje del día: "'+MSGS[(sel+today.getDate())%MSGS.length]+'"';
 $("list").innerHTML=p[1].map(k=>`<div class="card">${svg(k)}<div style="flex:1">${nm(k)}<small>${sets()} series × ${reps(k)}${k=="plank"||k=="mont"?" seg":""}</small><small>${dsc(k)}</small></div><a class="v" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(nm(k)+" técnica correcta short")}">Video</a></div>`).join("")
 +`<div class="card"><div>Calentamiento y estiramiento<small>${WARM.length+COOL.length} movimientos guiados</small></div></div>`;
 }
@@ -147,7 +148,7 @@ async function wake(){try{if(navigator.wakeLock)WL=await navigator.wakeLock.requ
 function unwake(){try{if(WL)WL.release()}catch(e){}WL=null}
 document.addEventListener("visibilitychange",()=>{if(!$("run").hidden&&document.visibilityState==="visible")wake()});
 /* Sesión */
-let Q=[],qi=0,tm=null,t=0;
+let Q=[],qi=0,tm=null,t=0,skipped=0;
 function say(s){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang="es-MX";speechSynthesis.speak(u)}catch(e){}}
 function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
 function build(){
@@ -178,16 +179,18 @@ qi++;show()}},1000);
 }
 function finish(){
 clearInterval(tm);unwake();
-const L0=lvl();const gain=S.last!==dstr(today)?60+sets()*10:0;S.xp+=gain;const L1=lvl();
-if(S.last!==dstr(today)){S.streak++;S.last=dstr(today)}
+const L0=lvl();const full=skipped<=Math.floor(Q.length*0.25);const gain=(full&&S.last!==dstr(today))?60+sets()*10:0;S.xp+=gain;const L1=lvl();
+if(full&&S.last!==dstr(today)){S.streak++;S.last=dstr(today)}
 S.done++;save();say("Misión cumplida");vib([200,100,200,100,400]);
 sel=(sel+1)%7;$("run").hidden=true;$("home").hidden=false;render();
-$("warn").innerHTML='<div class="warn">Misión cumplida: +'+gain+' XP'+(gain?'':' (hoy ya sumaste XP)')+(L1>L0?'. ¡Ascendiste a '+RANKS[L1]+'! Nuevos ejercicios desbloqueados':'')+'. Descansa: mañana toca el Día '+(sel+1)+'.</div>';
+$("warn").innerHTML='<div class="warn">Misión cumplida: +'+gain+' XP'+(gain?'':(full?' (hoy ya sumaste XP)':' (saltaste demasiados pasos: no cuenta como misión completa)'))+(L1>L0?'. ¡Ascendiste a '+RANKS[L1]+'! Nuevos ejercicios desbloqueados':'')+'. Descansa: mañana toca el Día '+(sel+1)+'.</div>';
 }
-$("done").onclick=()=>{clearInterval(tm);finish()};
-$("go").onclick=()=>{build();qi=0;$("home").hidden=true;$("run").hidden=false;wake();show()};
+function start(){build();qi=0;skipped=0;$("hl").hidden=true;$("home").hidden=true;$("run").hidden=false;wake();show()}
+$("go").onclick=()=>{if(S.health){start()}else{$("home").hidden=true;$("hl").hidden=false}};
+$("hok").onclick=()=>{S.health=1;save();start()};
+$("hno").onclick=()=>{$("hl").hidden=true;$("home").hidden=false};
 $("ok").onclick=()=>{vib(60);qi++;show()};
-$("skip").onclick=()=>{qi++;show()};
+$("skip").onclick=()=>{skipped++;qi++;show()};
 $("quit").onclick=()=>{clearInterval(tm);unwake();try{speechSynthesis.cancel()}catch(e){}$("run").hidden=true;$("home").hidden=false;render()};
 render();
 </script></body></html>
