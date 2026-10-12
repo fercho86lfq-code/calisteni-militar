@@ -2,6 +2,13 @@
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Calistenia Militar</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#4a7a1e">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Calistenia">
 <style>
 :root{--bg:#1c2018;--p:#272c21;--tx:#e9e6d6;--mu:#a2a58f;--ac:#d4a62a;--ok:#7fa05a;--bd:#3b4230;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#e8e5d3;--p:#f5f2e4;--tx:#262a1f;--mu:#666a56;--ac:#8f6a00;--ok:#4d6b2c;--bd:#c6c3ad}}
@@ -193,4 +200,5 @@ $("ok").onclick=()=>{vib(60);qi++;show()};
 $("skip").onclick=()=>{skipped++;qi++;show()};
 $("quit").onclick=()=>{clearInterval(tm);unwake();try{speechSynthesis.cancel()}catch(e){}$("run").hidden=true;$("home").hidden=false;render()};
 render();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
 </script></body></html>
