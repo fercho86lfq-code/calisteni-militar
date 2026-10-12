@@ -21,6 +21,7 @@ h2{font-size:22px;margin:18px 0 8px}
 .days button{padding:10px 0;font:inherit;background:var(--p);color:var(--tx);border:1px solid var(--bd);cursor:pointer}
 .days button.on{background:var(--ac);color:#1c2018;font-weight:700}
 .days button.today{outline:2px dashed var(--mu)}
+.exp{display:flex;gap:6px;margin-top:12px}.exp button{flex:1;padding:10px 4px;font:inherit;font-size:17px;background:var(--p);color:var(--tx);border:1px solid var(--bd);cursor:pointer}.exp button.on{background:var(--ac);color:#1c2018;font-weight:700}
 .card{background:var(--p);border:1px solid var(--bd);padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .card small{color:var(--mu);display:block}
 a.v{color:var(--ac);text-decoration:underline;white-space:nowrap}
@@ -39,6 +40,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tx);outline-offset:
 <div class="hq"><h1>CUARTEL GENERAL DÍA <span id="dn">1</span></h1><div class="streak" id="streak">Racha 0</div></div>
 <div id="warn"></div>
 <div class="rank"><b id="rk"></b> <span id="lv" style="float:right"></span><div class="bar"><i id="xp"></i></div><div class="note" id="xpn"></div></div>
+<div class="exp" id="exp"></div>
 <div class="days" id="days"></div>
 <h2 id="dt"></h2><div class="note" style="margin:-4px 0 8px">Circuito de alta intensidad: 15 minutos</div>
 <div id="list"></div>
@@ -108,17 +110,18 @@ mont:["Escaladores","Escaladores cruzados","Escaladores con pausa","Escaladores 
 burp:["Burpees","Burpees tácticos","Burpees con salto","Burpees con flexión arquero"]};
 const TH=[0,300,800,1500,2500,4000,6000];
 const lvl=()=>{let l=0;TH.forEach((t,i)=>{if(S.xp>=t)l=i});return l};
-const tier=()=>Math.min(3,Math.floor(lvl()/2));
+const dl=()=>Math.min(6,lvl()+({p:0,i:2,a:4}[S.exp]||0));
+const tier=()=>Math.min(3,Math.floor(dl()/2));
 const nm=k=>VARS[k][tier()];
-const dsc=k=>DESC[k]+(tier()?" Variante avanzada desbloqueada por tu rango.":"");
-let S={xp:0,streak:0,last:"",done:0};
+const dsc=k=>DESC[k]+(tier()?" Variante avanzada.":"");
+let S={xp:0,streak:0,last:"",done:0,exp:"p"};
 try{S=Object.assign(S,JSON.parse(localStorage.getItem("cm")||"{}"))}catch(e){}
 const save=()=>{try{localStorage.setItem("cm",JSON.stringify(S))}catch(e){}};
 /* Fecha en hora LOCAL (antes usaba UTC y fallaba por las noches) */
 const dstr=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const today=new Date(),ti=(today.getDay()+6)%7;let sel=ti;
-const sets=()=>3+(lvl()>=3?1:0);
-const mult=()=>1+lvl()*0.2;
+const sets=()=>3+(dl()>=3?1:0);
+const mult=()=>1+dl()*0.2;
 function reps(k){const b=E[k][1];return Math.round(b*mult()/(k=="plank"||k=="mont"?5:1))*(k=="plank"||k=="mont"?5:1)}
 function checkStreak(){
 const y=new Date(today);y.setDate(y.getDate()-1);
@@ -126,6 +129,7 @@ if(S.last&&S.last!==dstr(today)&&S.last!==dstr(y)){S.streak=0;save()}
 }
 function render(){
 checkStreak();
+$("exp").innerHTML=[["p","Principiante"],["i","Intermedio"],["a","Avanzado"]].map(e=>`<button class="${S.exp==e[0]?"on":""}" data-e="${e[0]}">${e[1]}</button>`).join("");$("exp").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.exp=b.dataset.e;save();render()});
 $("streak").textContent="Racha "+S.streak+(S.streak?" 🔥":"");
 const L=lvl();$("rk").textContent=RANKS[L];$("lv").textContent="Nivel "+(L+1);
 const into=S.xp-TH[L],span=L==6?1:TH[L+1]-TH[L];$("xp").style.width=(L==6?100:into/span*100)+"%";
