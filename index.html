@@ -29,8 +29,9 @@ h2{font-size:22px;margin:18px 0 8px}
 .days button.on{background:var(--ac);color:#1c2018;font-weight:700}
 .days button.today{outline:2px dashed var(--mu)}
 .exp{display:flex;gap:6px;margin-top:12px}.exp button{flex:1;padding:10px 4px;font:inherit;font-size:17px;background:var(--p);color:var(--tx);border:1px solid var(--bd);cursor:pointer}.exp button.on{background:var(--ac);color:#1c2018;font-weight:700}
-.tabs{display:flex;gap:6px;margin-top:12px}.tabs button{flex:1;padding:12px 4px;font:inherit;font-size:19px;font-weight:700;background:var(--p);color:var(--tx);border:2px solid var(--bd);cursor:pointer}.tabs button.on{background:var(--ac);color:#1c2018;border-color:var(--ac)}
+.tabs{display:flex;gap:6px;margin-top:12px}.tabs button{flex:1;padding:12px 2px;font:inherit;font-size:17px;font-weight:700;background:var(--p);color:var(--tx);border:2px solid var(--bd);cursor:pointer}.tabs button.on{background:var(--ac);color:#1c2018;border-color:var(--ac)}
 .cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}.cgrid div{padding:8px 0;text-align:center;background:var(--p);border:1px solid var(--bd);color:var(--mu);font-size:16px}.cgrid .ok{background:#4a7a1e;color:#fff;border-color:#4a7a1e}.cgrid .cur{background:var(--ac);color:#1c2018;font-weight:700;border-color:var(--ac)}.cgrid .rs{font-style:italic}
+.form label{display:block;margin-top:12px;color:var(--mu)}.form input{width:100%;padding:12px;font:inherit;font-size:22px;background:var(--p);color:var(--tx);border:2px solid var(--bd);border-radius:0}.form input:focus-visible{outline:3px solid var(--tx);outline-offset:2px}
 [hidden]{display:none!important}
 .btn:disabled{opacity:.55;cursor:default}a.btn{text-align:center;text-decoration:none}
 .card{background:var(--p);border:1px solid var(--bd);padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -71,8 +72,24 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tx);outline-offset:
 <button class="btn" id="chgo"></button>
 <a class="btn ok2" id="wa" target="_blank" rel="noopener" hidden></a>
 <button class="btn s" id="chreset">Reiniciar reto</button>
-<p class="note">Un día del reto por día de calendario. Cada semana sube un poco la dificultad. Los días de descanso activo también cuentan: el cuerpo se fortalece mientras descansa.</p>
+<p class="note">Un día del reto por día de calendario. Cada semana sube un poco la dificultad. Los días de descanso activo también cuentan: el cuerpo se fortalece mientras descansa. Si quieres, anota tu peso en Mi perfil el día 1 y otra vez el día 28.</p>
 <p class="note">Consulta a tu médico antes de entrenar. Detente si sientes dolor o mareo.</p>
+</div>
+<div id="pf" hidden>
+<div class="hq"><h1>MI PERFIL</h1><div class="streak" id="streak3"></div></div>
+<div class="tabs" id="tabs3"></div>
+<p class="note">Tus datos se guardan solo en este teléfono. No se envían a nadie.</p>
+<div class="form">
+<label for="pa">Altura (cm)</label><input id="pa" type="number" inputmode="numeric" min="100" max="230" placeholder="Ejemplo: 170">
+<label for="pp">Peso (kg)</label><input id="pp" type="number" inputmode="decimal" step="0.1" min="25" max="300" placeholder="Ejemplo: 70">
+<label for="pe">Edad (años)</label><input id="pe" type="number" inputmode="numeric" min="10" max="100" placeholder="Ejemplo: 30">
+</div>
+<button class="btn" id="psave">GUARDAR</button>
+<div id="pmsg"></div>
+<div class="rank" id="pimc" hidden></div>
+<h2>Historial de peso</h2><div class="note" id="psum" style="margin:-4px 0 8px"></div><div id="phist"></div>
+<button class="btn s" id="pdel">Borrar mis datos</button>
+<p class="note">El IMC es solo una referencia general: no distingue músculo de grasa y no sustituye una valoración médica. Para tomar decisiones sobre tu salud o tu alimentación, consulta a tu médico.</p>
 </div>
 <div id="hl" hidden><h2>Antes de empezar</h2><p>Esta app ofrece rutinas generales de ejercicio y no sustituye la opinión de un médico. Consulta a tu médico antes de empezar si tienes alguna lesión o condición de salud, o si llevas tiempo sin hacer ejercicio. Detente si sientes dolor, mareo o falta de aire. Los ejercicios con salto y los burpees exigen más a rodillas y espalda.</p><button class="btn" id="hok">ENTIENDO, COMENZAR</button><button class="btn s" id="hno">Volver</button></div>
 <div id="run" hidden>
@@ -172,6 +189,7 @@ const dsc=k=>DESC[k]+(tier()?" Variante avanzada.":"");
 let S={xp:0,streak:0,last:"",done:0,exp:"p",ch:{d:1,last:""}};
 try{S=Object.assign(S,JSON.parse(localStorage.getItem("cm")||"{}"))}catch(e){}
 if(!S.ch||!(S.ch.d>=1)){S.ch={d:1,last:""}}
+if(!S.pf||!Array.isArray(S.pf.h)){S.pf={a:"",p:"",e:"",h:[]}}
 const save=()=>{try{localStorage.setItem("cm",JSON.stringify(S))}catch(e){}};
 /* Fecha en hora LOCAL (antes usaba UTC y fallaba por las noches) */
 const dstr=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -231,11 +249,36 @@ const CH=[
 ["Simulacro final",["sent","flex","dom","abs"]],
 ["PRUEBA FINAL",["burp","dia","zanc","plank"]]];
 const wk=d=>Math.min(4,Math.floor((d-1)/7)+1);
-function tabs(id){const a=id=="tabs1"?"w":"c";
-$(id).innerHTML=[["w","Rutina semanal"],["c","Reto 28 días"]].map(e=>`<button class="${a==e[0]?"on":""}" data-t="${e[0]}">${e[1]}</button>`).join("");
-$(id).querySelectorAll("button").forEach(b=>b.onclick=()=>{if(b.dataset.t=="w")showHome();else showCh()})}
-function showHome(){mode="w";$("ch").hidden=true;$("home").hidden=false;render()}
-function showCh(){mode="c";$("home").hidden=true;$("ch").hidden=false;renderCh()}
+function tabs(id){const a={tabs1:"w",tabs2:"c",tabs3:"p"}[id];
+$(id).innerHTML=[["w","Rutina semanal"],["c","Reto 28 días"],["p","Mi perfil"]].map(e=>`<button class="${a==e[0]?"on":""}" data-t="${e[0]}">${e[1]}</button>`).join("");
+$(id).querySelectorAll("button").forEach(b=>b.onclick=()=>{const t=b.dataset.t;if(t=="w")showHome();else if(t=="c")showCh();else showPf()})}
+function showHome(){mode="w";$("ch").hidden=true;$("pf").hidden=true;$("home").hidden=false;render()}
+function showCh(){mode="c";$("home").hidden=true;$("pf").hidden=true;$("ch").hidden=false;renderCh()}
+function showPf(){mode="w";$("home").hidden=true;$("ch").hidden=true;$("pf").hidden=false;renderPf()}
+/* ===== Mi perfil: altura, peso, IMC e historial (solo en este teléfono) ===== */
+const fdate=s=>{const [y,m,d]=s.split("-");return d+"/"+m+"/"+y};
+function renderPf(){
+checkStreak();tabs("tabs3");
+$("streak3").textContent="Racha "+S.streak+(S.streak?" 🔥":"");
+$("pa").value=S.pf.a;$("pp").value=S.pf.p;$("pe").value=S.pf.e;
+const a=+S.pf.a,w=+S.pf.p,e=+S.pf.e,box=$("pimc");
+if(a&&w){box.hidden=false;
+ if(e&&e<18){box.innerHTML="<b>IMC no disponible</b><div class='note'>Si tienes menos de 18 años, el IMC no se interpreta igual que en adultos. Consulta a tu médico o pediatra.</div>"}
+ else{const v=w/((a/100)*(a/100));const t=v<18.5?"Por debajo del rango de referencia":v<25?"Dentro del rango de referencia":v<30?"Por encima del rango de referencia":"Muy por encima del rango de referencia";
+  box.innerHTML="<b>IMC: "+v.toFixed(1)+"</b><div>"+t+"</div><div class='note'>Rango de referencia para adultos: 18.5 a 24.9.</div>"}}
+else box.hidden=true;
+const h=S.pf.h;
+$("psum").textContent=h.length>=2?"Primer registro: "+h[0][1]+" kg. Último: "+h[h.length-1][1]+" kg. Cambio: "+((h[h.length-1][1]-h[0][1])>0?"+":"")+(h[h.length-1][1]-h[0][1]).toFixed(1)+" kg.":(h.length==1?"Primer registro guardado. Vuelve a anotar tu peso más adelante para ver tu avance.":"Aún no hay registros.");
+$("phist").innerHTML=h.slice(-6).reverse().map(x=>`<div class="card"><div>${fdate(x[0])}</div><b>${x[1]} kg</b></div>`).join("")}
+$("psave").onclick=()=>{
+const a=parseFloat($("pa").value),w=parseFloat($("pp").value),e=$("pe").value===""?"":parseFloat($("pe").value);
+if(!(a>=100&&a<=230)||!(w>=25&&w<=300)||(e!==""&&!(e>=10&&e<=100))){$("pmsg").innerHTML='<div class="warn">Revisa los datos: altura entre 100 y 230 cm, peso entre 25 y 300 kg y edad entre 10 y 100 años.</div>';return}
+S.pf.a=Math.round(a);S.pf.p=Math.round(w*10)/10;S.pf.e=e===""?"":Math.round(e);
+const d=dstr(today),h=S.pf.h;
+if(h.length&&h[h.length-1][0]===d)h[h.length-1][1]=S.pf.p;else h.push([d,S.pf.p]);
+if(h.length>60)h.splice(0,h.length-60);
+save();renderPf();$("pmsg").innerHTML='<div class="warn">Datos guardados.</div>'};
+$("pdel").onclick=()=>{if(confirm("¿Borrar tu altura, peso e historial de este teléfono?")){S.pf={a:"",p:"",e:"",h:[]};save();$("pmsg").innerHTML="";renderPf()}};
 function renderCh(){
 checkStreak();tabs("tabs2");
 const c=S.ch,d=c.d,fin=d>28;
