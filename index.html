@@ -48,6 +48,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tx);outline-offset:
 .note{color:var(--mu);font-size:16px;margin-top:10px}
 .fg{width:92px;height:55px;flex:none}.fig svg{width:min(100%,300px);height:auto}.fa,.fb{animation:fl 1.8s infinite}.fb{animation-direction:reverse}@keyframes fl{0%,45%{opacity:1}55%,100%{opacity:0}}@media(prefers-reduced-motion:reduce){.fa,.fb{animation:none}.fb{opacity:0}}
 </style></head><body><main>
+<div id="ac" hidden><div class="hq"><h1>ACCESO</h1></div><p id="acm">Escribe tu código de acceso para entrar.</p><div class="form"><label for="aci">Código de acceso</label><input id="aci" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXX-XXX-XXX" style="letter-spacing:2px;text-transform:uppercase"></div><div class="warn" id="ace" hidden></div><button class="btn" id="acb">ENTRAR</button><a class="btn s" id="acwa" target="_blank" rel="noopener">PEDIR MI CÓDIGO POR WHATSAPP</a></div>
 <div id="home">
 <div class="hq"><h1>CUARTEL GENERAL DÍA <span id="dn">1</span></h1><div class="streak" id="streak">Racha 0</div></div>
 <div class="tabs" id="tabs1"></div>
@@ -379,6 +380,19 @@ $("pz").onclick=()=>setPause(!paused);
 $("vid").addEventListener("click",()=>{if(!$("pz").hidden)setPause(true)});
 $("skip").onclick=()=>{skipped++;qi++;show()};
 $("quit").onclick=()=>{clearInterval(tm);unwake();try{speechSynthesis.cancel()}catch(e){}$("run").hidden=true;if(mode=="c")showCh();else showHome()};
-render();
+/* ===== Acceso por código (validación local, sin servidor) ===== */
+const SALT="cm-2026-k7q",EPOCH0=[2026,0,1];
+const h32=x=>{let h=2166136261;for(let i=0;i<x.length;i++){h^=x.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
+const AL="23456789ABCDEFGHJKMNPQRSTUVWXYZ",B=AL.length;const enc=(n,l)=>{let o="";for(let i=0;i<l;i++){o=AL[n%B]+o;n=Math.floor(n/B)}return o};const dec=x=>{let n=0;for(const c of x){const i=AL.indexOf(c);if(i<0)return -1;n=n*B+i}return n};
+const chk=x=>enc(h32(x+SALT)%(B*B*B),3);
+function parseCode(c){c=(c||"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(c.length!==9)return null;const p=c.slice(0,6);if(chk(p)!==c.slice(6))return null;const d=dec(p.slice(0,3));if(d<0)return null;return{c:c,exp:new Date(EPOCH0[0],EPOCH0[1],EPOCH0[2]+d,23,59,59)}}
+const fmtC=c=>c.slice(0,3)+"-"+c.slice(3,6)+"-"+c.slice(6);
+const fdt=d=>d.getDate()+"/"+(d.getMonth()+1)+"/"+d.getFullYear();
+function accOk(){const r=parseCode(S.ac);return !!r&&new Date()<=r.exp}
+function lockUI(msg){["home","ch","pf","hl","run"].forEach(i=>$(i).hidden=true);clearInterval(tm);$("acm").textContent=msg||"Escribe tu código de acceso para entrar.";$("ac").hidden=false;$("acwa").href="https://wa.me/"+WA+"?text="+encodeURIComponent("Hola, quiero mi código de acceso para Calistenia Militar.")}
+function chkAcc(){if(accOk()){$("ac").hidden=true;return true}const r=parseCode(S.ac);lockUI(r?"Tu acceso venció el "+fdt(r.exp)+". Pide tu nuevo código por WhatsApp.":"");return false}
+$("acb").onclick=()=>{const r=parseCode($("aci").value);if(!r){$("ace").textContent="Código no válido. Revísalo e inténtalo de nuevo.";$("ace").hidden=false;return}if(new Date()>r.exp){$("ace").textContent="Ese código venció el "+fdt(r.exp)+". Pide uno nuevo.";$("ace").hidden=false;return}S.ac=r.c;save();$("ace").hidden=true;$("ac").hidden=true;$("aci").value="";showHome()};
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&$("run").hidden)chkAcc()});
+render();chkAcc();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
 </script></body></html>
