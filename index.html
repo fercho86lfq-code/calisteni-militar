@@ -97,6 +97,8 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tx);outline-offset:
 <div class="note" id="sub"></div>
 <a class="v" id="vid" target="_blank" rel="noopener">Ver video de la técnica</a>
 <button class="btn" id="ok">HECHO</button>
+<div class="warn" id="pzn" hidden>En pausa. Toca CONTINUAR cuando estés listo.</div>
+<button class="btn ok2" id="pz" hidden>PAUSAR</button>
 <button class="btn s" id="skip">Saltar</button>
 <button class="btn s" id="quit">Abandonar</button>
 </div>
@@ -105,6 +107,18 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tx);outline-offset:
 const $=id=>document.getElementById(id);
 const DN=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
 const RANKS=["Recluta","Soldado","Cabo","Sargento","Teniente","Capitán","Comandante"];
+const DS={"Saltos de tijera":"Salta abriendo piernas y brazos a la vez y vuelve a juntarlos. Aterriza suave y con ritmo constante.",
+"Círculos de brazos":"De pie, brazos extendidos a los lados. Haz círculos grandes hacia adelante y, a la mitad del tiempo, hacia atrás.",
+"Rotación de cadera":"Manos en la cintura y pies firmes. Dibuja círculos amplios con la cadera, la mitad del tiempo hacia cada lado.",
+"Círculos de cadera":"Manos en la cintura y pies firmes. Dibuja círculos amplios con la cadera, la mitad del tiempo hacia cada lado.",
+"Sentadilla al aire":"Pies al ancho de hombros. Baja como si te sentaras y vuelve a subir sin prisa, con la espalda recta.",
+"Estiramiento de pecho":"Junta las manos detrás de la espalda, estira los brazos y abre el pecho. Mantén sin rebotar.",
+"Cuádriceps de pie":"De pie, sujeta un pie por detrás y acerca el talón al glúteo con las rodillas juntas. Cambia de pierna a la mitad del tiempo.",
+"Isquiotibiales sentado":"Sentado con las piernas estiradas al frente, inclina el torso hacia los pies con la espalda larga. Sin forzar.",
+"Postura del niño":"De rodillas, siéntate sobre los talones y estira los brazos al frente apoyando la frente en el suelo. Respira lento.",
+"Rotación de columna acostado":"Acostado boca arriba con las rodillas dobladas, deja caer las rodillas a un lado y gira la cabeza al otro. Cambia de lado a la mitad del tiempo.",
+"Estiramiento de hombros":"Lleva un brazo estirado a través del pecho y sujétalo con el otro. Cambia de brazo a la mitad del tiempo.",
+"Respiración profunda":"De pie o sentado, inhala lento por la nariz y exhala despacio por la boca. Relaja hombros y mandíbula."};
 const WARM=[["Saltos de tijera",30],["Círculos de brazos",20],["Rotación de cadera",20],["Sentadilla al aire",30]];
 const COOL=[["Estiramiento de pecho",25],["Cuádriceps de pie",25],["Isquiotibiales sentado",25],["Postura del niño",30]];
 const E={
@@ -309,40 +323,42 @@ $("chreset").onclick=()=>{if(confirm("¿Reiniciar el reto desde el día 1?")){S.
 let WL=null;
 async function wake(){try{if(navigator.wakeLock)WL=await navigator.wakeLock.request("screen")}catch(e){}}
 function unwake(){try{if(WL)WL.release()}catch(e){}WL=null}
-document.addEventListener("visibilitychange",()=>{if(!$("run").hidden&&document.visibilityState==="visible")wake()});
+document.addEventListener("visibilitychange",()=>{if($("run").hidden)return;if(document.visibilityState==="visible")wake();else if(!$("pz").hidden)setPause(true)});
 /* Sesión */
-let Q=[],qi=0,tm=null,t=0,skipped=0;
+let Q=[],qi=0,tm=null,t=0,skipped=0,paused=false;
+function setPause(v){paused=v;$("pz").textContent=v?"CONTINUAR":"PAUSAR";$("pzn").hidden=!v;if(v){try{speechSynthesis.cancel()}catch(e){}}}
 function say(s){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang="es-MX";speechSynthesis.speak(u)}catch(e){}}
 function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
 function build(){
 Q=[];let p;
-if(mode=="c"){const day=CH[Math.min(S.ch.d,28)-1];if(!day[1]){WARM.forEach(w=>Q.push({ph:"Calentamiento",n:w[0],t:w[1],auto:1,v:w[0]}));MOV.forEach(w=>Q.push({ph:"Movilidad",n:w[0],t:w[1],auto:1,v:w[0]}));return}p=day[1]}else p=PLAN[sel][1];
-WARM.forEach(w=>Q.push({ph:"Calentamiento",n:w[0],t:w[1],auto:1,v:w[0]}));
+if(mode=="c"){const day=CH[Math.min(S.ch.d,28)-1];if(!day[1]){WARM.forEach(w=>Q.push({ph:"Calentamiento",n:w[0],t:w[1],auto:1,v:w[0],d:DS[w[0]]}));MOV.forEach(w=>Q.push({ph:"Movilidad",n:w[0],t:w[1],auto:1,v:w[0],d:DS[w[0]]}));return}p=day[1]}else p=PLAN[sel][1];
+WARM.forEach(w=>Q.push({ph:"Calentamiento",n:w[0],t:w[1],auto:1,v:w[0],d:DS[w[0]]}));
 p.forEach(k=>{for(let s=1;s<=sets();s++){
 const r=reps(k),tmd=isT(k);
 Q.push({ph:"Serie "+s+" de "+sets(),n:nm(k),r:r,t:tmd?r:0,auto:tmd,k:k,d:dsc(k),v:nm(k),unit:tmd?"seg":"reps"});
 Q.push({ph:"Descanso",n:"Restablece posición",t:s==sets()?30:20,auto:1,rest:1,next:s==sets()?"":nm(k)})}});
-COOL.forEach(w=>Q.push({ph:"Estiramiento",n:w[0],t:w[1],auto:1,v:w[0]}));
+COOL.forEach(w=>Q.push({ph:"Estiramiento",n:w[0],t:w[1],auto:1,v:w[0],d:DS[w[0]]}));
 }
 function show(){
 clearInterval(tm);
 if(qi>=Q.length)return finish();
+paused=false;$("pzn").hidden=true;$("pz").textContent="PAUSAR";
 const q=Q[qi];$("run").className=q.rest?"rest":"";
 $("ph").textContent=q.ph;$("fig").innerHTML=q.k?svg(q.k,"fgb"):"";$("nm").textContent=q.n;
 $("vid").hidden=!q.v;
 if(q.v)$("vid").href="https://www.youtube.com/results?search_query="+encodeURIComponent(q.v+" técnica correcta short");
 $("sub").textContent=q.rest?(q.next?"Siguiente: "+q.next:"Siguiente bloque"):(q.d||"")+(q.r&&!q.t?" Toca HECHO al terminar.":"");
-if(q.r&&!q.t){$("big").textContent=q.r+" reps";$("ok").hidden=false;say(q.n+", "+q.r+" repeticiones");return}
-$("ok").hidden=true;t=q.t;$("big").textContent=t;
+if(q.r&&!q.t){$("big").textContent=q.r+" reps";$("ok").hidden=false;$("pz").hidden=true;say(q.n+", "+q.r+" repeticiones");return}
+$("ok").hidden=true;$("pz").hidden=false;t=q.t;$("big").textContent=t;
 say(q.rest?"Descanso. Vuelve a posición inicial en "+t+" segundos":q.n);
-tm=setInterval(()=>{t--;$("big").textContent=t;
+tm=setInterval(()=>{if(paused)return;t--;$("big").textContent=t;
 if(t<=3&&t>0){vib(80)}
 if(t<=0){clearInterval(tm);
 if(q.rest){say("Posición inicial. Ya.");vib([300,100,300])}else vib(200);
 qi++;show()}},1000);
 }
 function finish(){
-clearInterval(tm);unwake();
+clearInterval(tm);unwake();paused=false;
 const L0=lvl();const full=skipped<=Math.floor(Q.length*0.25);const gain=(full&&S.last!==dstr(today))?60+sets()*10:0;S.xp+=gain;const L1=lvl();
 if(full&&S.last!==dstr(today)){S.streak++;S.last=dstr(today)}
 S.done++;save();say("Misión cumplida");vib([200,100,200,100,400]);
@@ -359,6 +375,8 @@ function gate(){if(S.health){start()}else{$("home").hidden=true;$("ch").hidden=t
 $("hok").onclick=()=>{S.health=1;save();start()};
 $("hno").onclick=()=>{$("hl").hidden=true;if(mode=="c")showCh();else showHome()};
 $("ok").onclick=()=>{vib(60);qi++;show()};
+$("pz").onclick=()=>setPause(!paused);
+$("vid").addEventListener("click",()=>{if(!$("pz").hidden)setPause(true)});
 $("skip").onclick=()=>{skipped++;qi++;show()};
 $("quit").onclick=()=>{clearInterval(tm);unwake();try{speechSynthesis.cancel()}catch(e){}$("run").hidden=true;if(mode=="c")showCh();else showHome()};
 render();
