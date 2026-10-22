@@ -96,6 +96,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tx);outline-offset:
 <div id="run" hidden>
 <div class="ph" id="ph"></div><div class="nm" id="nm"></div><div class="fig" id="fig"></div><div class="big" id="big"></div>
 <div class="note" id="sub"></div>
+<div class="note" id="nx" style="color:var(--tx);font-weight:700"></div>
 <a class="v" id="vid" target="_blank" rel="noopener">Ver video de la técnica</a>
 <button class="btn" id="ok">HECHO</button>
 <div class="warn" id="pzn" hidden>En pausa. Toca CONTINUAR cuando estés listo.</div>
@@ -344,14 +345,15 @@ function show(){
 clearInterval(tm);
 if(qi>=Q.length)return finish();
 paused=false;$("pzn").hidden=true;$("pz").textContent="PAUSAR";
-const q=Q[qi];$("run").className=q.rest?"rest":"";
+const q=Q[qi];$("run").className=q.rest?"rest":"";$("skip").textContent=q.prep?"EMPEZAR YA":"Saltar";
+let nxt="";if(q.prep){nxt="Primero: "+Q[qi+1].n}else if(!q.rest){let j=qi+1;while(j<Q.length&&Q[j].rest)j++;nxt=j<Q.length?"Siguiente: "+Q[j].n:"Último ejercicio"}$("nx").textContent=nxt;
 $("ph").textContent=q.ph;$("fig").innerHTML=q.k?svg(q.k,"fgb"):"";$("nm").textContent=q.n;
 $("vid").hidden=!q.v;
 if(q.v)$("vid").href="https://www.youtube.com/results?search_query="+encodeURIComponent(q.v+" técnica correcta short");
 $("sub").textContent=q.rest?(q.next?"Siguiente: "+q.next:"Siguiente bloque"):(q.d||"")+(q.r&&!q.t?" Toca HECHO al terminar.":"");
 if(q.r&&!q.t){$("big").textContent=q.r+" reps";$("ok").hidden=false;$("pz").hidden=true;say(q.n+", "+q.r+" repeticiones");return}
 $("ok").hidden=true;$("pz").hidden=false;t=q.t;$("big").textContent=t;
-say(q.rest?"Descanso. Vuelve a posición inicial en "+t+" segundos":q.n);
+say(q.prep?"Prepárate. Empezamos en "+t+" segundos":q.rest?"Descanso. Vuelve a posición inicial en "+t+" segundos":q.n);
 tm=setInterval(()=>{if(paused)return;t--;$("big").textContent=t;
 if(t<=3&&t>0){vib(80)}
 if(t<=0){clearInterval(tm);
@@ -360,7 +362,7 @@ qi++;show()}},1000);
 }
 function finish(){
 clearInterval(tm);unwake();paused=false;
-const L0=lvl();const full=skipped<=Math.floor(Q.length*0.25);const gain=(full&&S.last!==dstr(today))?60+sets()*10:0;S.xp+=gain;const L1=lvl();
+const L0=lvl();const full=skipped<=Math.floor(Q.filter(x=>!x.prep).length*0.25);const gain=(full&&S.last!==dstr(today))?60+sets()*10:0;S.xp+=gain;const L1=lvl();
 if(full&&S.last!==dstr(today)){S.streak++;S.last=dstr(today)}
 S.done++;save();say("Misión cumplida");vib([200,100,200,100,400]);
 if(mode=="c"){const dn=S.ch.d;if(full){S.ch.d++;S.ch.last=dstr(today)}save();$("run").hidden=true;showCh();
@@ -369,7 +371,7 @@ $("chmsg").innerHTML='<div class="warn">'+(full?(dn>=28?"¡Reto de 28 días comp
 sel=(sel+1)%7;$("run").hidden=true;$("home").hidden=false;render();
 $("warn").innerHTML='<div class="warn">Misión cumplida: +'+gain+' XP'+(gain?'':(full?' (hoy ya sumaste XP)':' (saltaste demasiados pasos: no cuenta como misión completa)'))+(L1>L0?'. ¡Ascendiste a '+RANKS[L1]+'! Nuevos ejercicios desbloqueados':'')+'. Descansa: mañana toca el Día '+(sel+1)+'.</div>';
 }
-function start(){build();qi=0;skipped=0;$("hl").hidden=true;$("home").hidden=true;$("ch").hidden=true;$("run").hidden=false;wake();show()}
+function start(){build();Q.unshift({ph:"Preparación",n:"¡Prepárate!",t:10,prep:1,d:"Busca un espacio libre y deja el celular donde puedas verlo. El calentamiento empieza en unos segundos."});qi=0;skipped=0;$("hl").hidden=true;$("home").hidden=true;$("ch").hidden=true;$("run").hidden=false;wake();show()}
 $("go").onclick=()=>{mode="w";gate()};
 $("chgo").onclick=()=>{mode="c";gate()};
 function gate(){if(S.health){start()}else{$("home").hidden=true;$("ch").hidden=true;$("hl").hidden=false}}
@@ -378,7 +380,7 @@ $("hno").onclick=()=>{$("hl").hidden=true;if(mode=="c")showCh();else showHome()}
 $("ok").onclick=()=>{vib(60);qi++;show()};
 $("pz").onclick=()=>setPause(!paused);
 $("vid").addEventListener("click",()=>{if(!$("pz").hidden)setPause(true)});
-$("skip").onclick=()=>{skipped++;qi++;show()};
+$("skip").onclick=()=>{if(!Q[qi].prep)skipped++;qi++;show()};
 $("quit").onclick=()=>{clearInterval(tm);unwake();try{speechSynthesis.cancel()}catch(e){}$("run").hidden=true;if(mode=="c")showCh();else showHome()};
 /* ===== Acceso por código (validación local, sin servidor) ===== */
 const SALT="cm-2026-k7q",EPOCH0=[2026,0,1];
