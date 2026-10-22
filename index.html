@@ -31,7 +31,7 @@ h2{font-size:22px;margin:18px 0 8px}
 .exp{display:flex;gap:6px;margin-top:12px}.exp button{flex:1;padding:10px 4px;font:inherit;font-size:17px;background:var(--p);color:var(--tx);border:1px solid var(--bd);cursor:pointer}.exp button.on{background:var(--ac);color:#1c2018;font-weight:700}
 .tabs{display:flex;gap:6px;margin-top:12px}.tabs button{flex:1;padding:12px 2px;font:inherit;font-size:17px;font-weight:700;background:var(--p);color:var(--tx);border:2px solid var(--bd);cursor:pointer}.tabs button.on{background:var(--ac);color:#1c2018;border-color:var(--ac)}
 .cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}.cgrid div{padding:8px 0;text-align:center;background:var(--p);border:1px solid var(--bd);color:var(--mu);font-size:16px}.cgrid .ok{background:#4a7a1e;color:#fff;border-color:#4a7a1e}.cgrid .cur{background:var(--ac);color:#1c2018;font-weight:700;border-color:var(--ac)}.cgrid .rs{font-style:italic}
-.form label{display:block;margin-top:12px;color:var(--mu)}.form input{width:100%;padding:12px;font:inherit;font-size:22px;background:var(--p);color:var(--tx);border:2px solid var(--bd);border-radius:0}.form input:focus-visible{outline:3px solid var(--tx);outline-offset:2px}
+.form label{display:block;margin-top:12px;color:var(--mu)}.form input{width:100%;padding:12px;font:inherit;font-size:22px;background:var(--p);color:var(--tx);border:2px solid var(--bd);border-radius:0}.form select{width:100%;padding:12px;font:inherit;font-size:18px;background:var(--p);color:var(--tx);border:2px solid var(--bd);border-radius:0}.form input:focus-visible,.form select:focus-visible{outline:3px solid var(--tx);outline-offset:2px}
 [hidden]{display:none!important}
 .btn:disabled{opacity:.55;cursor:default}a.btn{text-align:center;text-decoration:none}
 .card{background:var(--p);border:1px solid var(--bd);padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -88,6 +88,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tx);outline-offset:
 <button class="btn" id="psave">GUARDAR</button>
 <div id="pmsg"></div>
 <div class="rank" id="pimc" hidden></div>
+<h2>Voz del entrenador</h2><div class="form"><label for="vsel">Voz</label><select id="vsel"></select><label for="vtn">Tono</label><select id="vtn"><option value="1">Normal</option><option value="0.75">Más grave</option></select></div><button class="btn s" id="vtest">PROBAR VOZ</button><p class="note" id="vnote"></p>
 <h2>Historial de peso</h2><div class="note" id="psum" style="margin:-4px 0 8px"></div><div id="phist"></div>
 <button class="btn s" id="pdel">Borrar mis datos</button>
 <p class="note">El IMC es solo una referencia general: no distingue músculo de grasa y no sustituye una valoración médica. Para tomar decisiones sobre tu salud o tu alimentación, consulta a tu médico.</p>
@@ -273,7 +274,7 @@ function showCh(){mode="c";$("home").hidden=true;$("pf").hidden=true;$("ch").hid
 function showPf(){mode="w";$("home").hidden=true;$("ch").hidden=true;$("pf").hidden=false;renderPf()}
 /* ===== Mi perfil: altura, peso, IMC e historial (solo en este teléfono) ===== */
 const fdate=s=>{const [y,m,d]=s.split("-");return d+"/"+m+"/"+y};
-function renderPf(){
+function renderPf(){fillVoices();
 checkStreak();tabs("tabs3");
 $("streak3").textContent="Racha "+S.streak+(S.streak?" 🔥":"");
 $("pa").value=S.pf.a;$("pp").value=S.pf.p;$("pe").value=S.pf.e;
@@ -329,7 +330,11 @@ document.addEventListener("visibilitychange",()=>{if($("run").hidden)return;if(d
 /* Sesión */
 let Q=[],qi=0,tm=null,t=0,skipped=0,paused=false;
 function setPause(v){paused=v;$("pz").textContent=v?"CONTINUAR":"PAUSAR";$("pzn").hidden=!v;if(v){try{speechSynthesis.cancel()}catch(e){}}}
-function say(s){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang="es-MX";speechSynthesis.speak(u)}catch(e){}}
+function esVoices(){try{return speechSynthesis.getVoices().filter(v=>/^es/i.test(v.lang))}catch(e){return[]}}
+function say(s){try{if(S.vz==="off")return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang="es-MX";const v=S.vz?esVoices().find(x=>x.voiceURI===S.vz):null;if(v){u.voice=v;u.lang=v.lang}u.pitch=+S.vp||1;speechSynthesis.speak(u)}catch(e){}}
+const MALE=/jorge|diego|juan|carlos|pablo|enrique|miguel|raul|raúl|alberto|antonio|male|hombre|mascul/i,FEM=/paulina|monica|mónica|sabina|helena|laura|lucia|lucía|marisol|esperanza|female|mujer|femen/i;
+function fillVoices(){const sel=$("vsel");if(!sel)return;const vs=esVoices();let h='<option value="">Automática (la del teléfono)</option>';vs.forEach((v,i)=>{const g=MALE.test(v.name)?" (hombre)":FEM.test(v.name)?" (mujer)":"";h+='<option value="'+v.voiceURI.replace(/"/g,"&quot;")+'">Voz '+(i+1)+" - "+v.name+g+"</option>"});h+='<option value="off">Sin voz (silencio)</option>';sel.innerHTML=h;sel.value=S.vz||"";if(sel.value!==(S.vz||""))sel.value="";$("vtn").value=String(S.vp||1);$("vnote").textContent=vs.length?"Las voces disponibles dependen de tu teléfono. Prueba varias y elige la que más te guste.":"Tu teléfono no tiene voces en español disponibles, se usará la voz automática."}
+try{speechSynthesis.onvoiceschanged=fillVoices}catch(e){}
 function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
 function build(){
 Q=[];let p;
@@ -393,6 +398,9 @@ const fdt=d=>d.getDate()+"/"+(d.getMonth()+1)+"/"+d.getFullYear();
 function accOk(){const r=parseCode(S.ac);return !!r&&new Date()<=r.exp}
 function lockUI(msg){["home","ch","pf","hl","run"].forEach(i=>$(i).hidden=true);clearInterval(tm);$("acm").textContent=msg||"Escribe tu código de acceso para entrar.";$("ac").hidden=false;$("acwa").href="https://wa.me/"+WA+"?text="+encodeURIComponent("Hola, quiero mi código de acceso para Calistenia Militar.")}
 function chkAcc(){if(accOk()){$("ac").hidden=true;return true}const r=parseCode(S.ac);lockUI(r?"Tu acceso venció el "+fdt(r.exp)+". Pide tu nuevo código por WhatsApp.":"");return false}
+$("vsel").onchange=()=>{S.vz=$("vsel").value;save();say("Soldado, prepárate. Vamos con el calentamiento.")};
+$("vtn").onchange=()=>{S.vp=+$("vtn").value;save();say("Soldado, prepárate. Vamos con el calentamiento.")};
+$("vtest").onclick=()=>{if(S.vz==="off"){S.vz="";save();fillVoices()}say("Soldado, prepárate. Vamos con el calentamiento.")};
 $("acb").onclick=()=>{const r=parseCode($("aci").value);if(!r){$("ace").textContent="Código no válido. Revísalo e inténtalo de nuevo.";$("ace").hidden=false;return}if(new Date()>r.exp){$("ace").textContent="Ese código venció el "+fdt(r.exp)+". Pide uno nuevo.";$("ace").hidden=false;return}S.ac=r.c;save();$("ace").hidden=true;$("ac").hidden=true;$("aci").value="";showHome()};
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&$("run").hidden)chkAcc()});
 render();chkAcc();
